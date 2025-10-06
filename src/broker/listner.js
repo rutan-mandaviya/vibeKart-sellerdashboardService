@@ -27,6 +27,7 @@ module.exports = async function (){
     );});
 
 subscribeToQueue("order_service_payment_completed", async (data) => {
+    console.log("Payment completed for order:", data);
     await orderModel.findByIdAndUpdate(data.order, { status: data.status });
 });
 
