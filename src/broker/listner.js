@@ -22,7 +22,7 @@ module.exports = async function (){
 
     subscribeToQueue('seller_dashboard_Payment_order_completed', async (data) => {
     await paymentModel.findOneAndUpdate(
-        { razorpayOrderId: data.OrderId },
+        { razorpayOrderId: data.razorpayOrderId },
         { ...data }
     );
 });
