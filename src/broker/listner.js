@@ -20,11 +20,13 @@ module.exports = async function (){
         await paymentModel.create(data);
     });
 
-    subscribeToQueue('seller_dashboard_Payment_order_completed',async (data)=>{
-        await paymentModel.findOneAndUpdate({ orderId: data.orderId }, { ...data });
-    });
+    subscribeToQueue('seller_dashboard_Payment_order_completed', async (data) => {
+    await paymentModel.findOneAndUpdate(
+        { razorpayOrderId: data.OrderId },
+        { ...data }
+    );
+});
 
-    
 
 
 
