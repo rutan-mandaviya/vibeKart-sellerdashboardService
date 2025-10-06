@@ -12,7 +12,7 @@ async function getMetrics(req, res) {
         const seller = req.user;
 
         // Get all products for this seller
-        const products = await productModel.find({ seller: seller._id });
+        const products = await productModel.find({ seller: seller.id });
         const productIds = products.map(p => p._id);
 
         // Get all orders containing seller's products
@@ -63,7 +63,7 @@ async function getOrders(req, res) {
         const seller = req.user;
 
         // Get all products for this seller
-        const products = await productModel.find({ seller: seller._id });
+        const products = await productModel.find({ seller: seller.id });
         const productIds = products.map(p => p._id);
 
         // Get all orders containing seller's products
