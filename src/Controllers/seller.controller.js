@@ -61,24 +61,32 @@ async function getMetrics(req, res) {
 async function getOrders(req, res) {
     try {
         const seller = req.user;
+        console.log("Seller info:", seller); // ✅ Check if seller ID is correct
 
         // Get all products for this seller
         const products = await productModel.find({ seller: seller.id });
-        const productIds = products.map(p => p._id);
+        console.log("Seller's products:", products.map(p => ({ id: p._id.toString(), title: p.title })));
 
-        // Get all orders containing seller's products
-        const orders = await orderModel.find({
-            'items.product': { $in: productIds }
-        }).populate('user', 'name email').sort({ createdAt: -1 });
+        // Convert product IDs to string to avoid ObjectId vs string mismatch
+        const productIds = products.map(p => p._id.toString());
+        console.log("Product IDs:", productIds);
+
+        // Get all orders
+        const allOrders = await orderModel.find().populate('user', 'name email').sort({ createdAt: -1 });
+        console.log("All orders count:", allOrders.length);
 
         // Filter order items to only include those from this seller
-        const filteredOrders = orders.map(order => {
-            const filteredItems = order.items.filter(item => productIds.includes(item.product));
+        const filteredOrders = allOrders.map(order => {
+            const filteredItems = order.items.filter(item => productIds.includes(item.product.toString()));
             return {
                 ...order.toObject(),
                 items: filteredItems
             };
         }).filter(order => order.items.length > 0);
+
+        console.log("Filtered orders count:", filteredOrders.length);
+        console.log("Filtered orders:", filteredOrders);
+
         return res.json(filteredOrders);
     } catch (error) {
         console.error("Error fetching orders:", error)
@@ -87,6 +95,7 @@ async function getOrders(req, res) {
         });
     }
 }
+
 
 async function getProducts(req, res) {
 
