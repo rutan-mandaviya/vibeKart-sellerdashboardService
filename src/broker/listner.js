@@ -25,6 +25,10 @@ module.exports = async function (){
         { razorpayOrderId: data.razorpayOrderId },
         { ...data }
     );
+
+    subscribeToQueue("order_service_payment_completed", async (data) => {
+        await orderModel.findByIdAndUpdate(data.order, { status: data.status });
+    });
 });
 
 
