@@ -8,43 +8,54 @@ const jwt = require("jsonwebtoken");
 
 
 async function getMetrics(req, res) {
-    try { 
+    try {
         const seller = req.user;
+        console.log("Seller info:", seller); // ✅ Check seller ID
 
         // Get all products for this seller
         const products = await productModel.find({ seller: seller.id });
-        const productIds = products.map(p => p._id);
+        console.log("Seller's products:", products.map(p => ({ id: p._id.toString(), title: p.title })));
 
-        // Get all orders containing seller's products
-        const orders = await orderModel.find({
+        // Convert product IDs to string to avoid ObjectId vs string mismatch
+        const productIds = products.map(p => p._id.toString());
+        console.log("Product IDs:", productIds);
+
+        // Get all orders containing seller's products with certain statuses
+        const allOrders = await orderModel.find({
             'items.product': { $in: productIds },
-            status: { $in: [ "CONFIRMED", "SHIPPED", "DELIVERED" ] }
+            status: { $in: ["CONFIRMED", "SHIPPED", "DELIVERED"] }
         });
+        console.log("Orders count fetched:", allOrders.length);
 
-        // Sales: total number of items sold
+        // Sales: total number of items sold & revenue
         let sales = 0;
         let revenue = 0;
         const productSales = {};
 
-        orders.forEach(order => {
+        allOrders.forEach(order => {
             order.items.forEach(item => {
-                if (productIds.includes(item.product)) {
+                if (productIds.includes(item.product.toString())) {
                     sales += item.quantity;
                     revenue += item.price.amount * item.quantity;
-                    productSales[ item.product ] = (productSales[ item.product ] || 0) + item.quantity;
+                    const pid = item.product.toString();
+                    productSales[pid] = (productSales[pid] || 0) + item.quantity;
                 }
             });
         });
 
+        console.log("Product sales mapping:", productSales);
+
         // Top products by quantity sold
         const topProducts = Object.entries(productSales)
-            .sort((a, b) => b[ 1 ] - a[ 1 ])
+            .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
-            .map(([ productId, qty ]) => {
-                const prod = products.find(p => p._id.equals(productId));
+            .map(([productId, qty]) => {
+                const prod = products.find(p => p._id.toString() === productId);
                 return prod ? { id: prod._id, title: prod.title, sold: qty } : null;
             })
             .filter(Boolean);
+
+        console.log("Top products:", topProducts);
 
         return res.json({
             sales,
@@ -52,12 +63,11 @@ async function getMetrics(req, res) {
             topProducts
         });
     } catch (error) {
-        console.error("Error fetching metrics:", error)
-        return res.status(500).json({
-            message: "Internal Server Error"
-        });
+        console.error("Error fetching metrics:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
 async function getOrders(req, res) {
     try {
         const seller = req.user;
