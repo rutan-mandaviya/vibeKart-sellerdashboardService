@@ -20,15 +20,20 @@ module.exports = async function (){
         await paymentModel.create(data);
     });
 
-    subscribeToQueue('seller_dashboard_Payment_order_completed', async (data) => {
+   subscribeToQueue('seller_dashboard_Payment_order_completed', async (data) => {
+    const { razorpayOrderId, paymentId, signature, status } = data;
+
     await paymentModel.findOneAndUpdate(
-        { razorpayOrderId: data.razorpayOrderId },
-        { ...data }
-    );});
+        { razorpayOrderId },
+        { paymentId, signature, status: 'COMPLETED' }, // _id ko skip kiya
+        { new: true }
+    );
+});
+
 
 subscribeToQueue("order_service_payment_completed", async (data) => {
     console.log("Payment completed for order:", data);
-    await orderModel.findByIdAndUpdate(data.order, { status: data.status });
+    await orderModel.findByIdAndUpdate(data.order, { status: data.status }, { new: true });
 });
 
 
